@@ -1,0 +1,12 @@
+#!/bin/sh
+# this is supposed to be called by the inittab
+
+fbink -q -g file=/mnt/onboard/.apps/koboHUB/icons/pre_loading.png,halign=CENTER,valign=CENTER > /dev/null
+
+sleep 60
+cd /mnt/onboard/.apps/koboHUB/
+rm /mnt/onboard/.apps/koboHUB/log.old
+if [ -f /mnt/onboard/.apps/koboHUB/log ]; then
+    mv /mnt/onboard/.apps/koboHUB/log /mnt/onboard/.apps/koboHUB/log.old
+fi
+python koboHUB.py > /mnt/onboard/.apps/koboHUB/log 2>&1
