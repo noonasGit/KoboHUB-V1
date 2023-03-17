@@ -1230,17 +1230,18 @@ def main():
     kobohub = koboHUB()
     counter = 0
 
-    if screen_rotation == "PORTRAIT" :
-        ticker_x = int(screen_size[0]) -168
-    else:
-        ticker_x = int(screen_size[0]) - 168
-        #ticker_x = 840
+
 
     ticker_image = Image.open('icons/ticker_loading.png')
     #Clear the screen well before start
     day_check = datetime.now().strftime("%d-%m-%Y")
     try:
         while True:
+            if screen_rotation == "PORTRAIT" :
+                ticker_x = int(screen_size[0]) -168
+            else:
+                screen_size = get_kobo_screen_size()
+                ticker_x = int(screen_size[0]) - 168
             #print("Comparing ",day_check," with ",datetime.now().strftime("%d-%m-%Y"))
             if day_check != datetime.now().strftime("%d-%m-%Y") :
                 print("KoboHUB : Cleaninig the e-ink for the day")
