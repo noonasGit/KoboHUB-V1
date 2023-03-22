@@ -45,6 +45,22 @@ def wait_for_wifi():
             os.system("reboot")
         time.sleep(15)
 
+def get_screen_ref_data(file_path:str):
+    if os.path.exists(file_path) :
+        parser = configparser.RawConfigParser()
+        parser.read(file_path)
+        data = dict()
+        data['times_id'] = parser.get("screen-refresh-schedule", "times")
+        data['screen_rate_id'] = parser.get("screen-refresh-schedule", "screen_rate")
+        data['backlit_setting_id'] = parser.get("screen-refresh-schedule", "backlit_setting")
+        return data
+    else :
+        data = dict()
+        data['times_id'] = "0,0,0,0,5,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0"
+        data['screen_rate_id'] = "60,60,60,60,65,60,60,60,60,60,60,60,60,60,60,60,60,60,60,60,60,60,60,60"
+        data['backlit_setting_id'] = "0,0,0,0,5,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0"
+        return data
+
 
 def get_config_data(file_path:str, show_icons:int):
     screen_orientation = get_screen_orientation()
@@ -77,6 +93,8 @@ def get_config_data(file_path:str, show_icons:int):
     data['screen-orientation_id'] = parser.get("koboHUB","screen-orientation")
     data['garbage-show_id'] = parser.get("koboHUB","garbage-show")
     data['koboHUB-refresh-seconds_id'] = parser.get("koboHUB","koboHUB-refresh-seconds")
+    data['koboHUB-var-refresh_id'] = parser.get("beta","koboHUB-var-refresh")
+
     if show_icons == 1:
         if screen_orientation == "LANDSCAPE" :
             config_x = 20
@@ -207,6 +225,11 @@ class koboHUB:
         self.cfg_data['quote-of-the-day-max-lenght'] = cfg_file_data['quote-of-the-day-max-lenght_id']
         self.cfg_data['screen-orientation'] = cfg_file_data['screen-orientation_id']
         self.cfg_data['garbage_schedule'] = cfg_file_data['garbage-show_id']
+        cfg_file_data = get_screen_ref_data("koboHUB_refresh_schedule.ini")
+
+        self.times_data = cfg_file_data['times_id'].split(",")
+        self.screen_refresh_data = cfg_file_data['screen_rate_id'].split(",")
+        self.backlit_settings_data = cfg_file_data['backlit_setting_id'].split(",")
 
         # fbink configuration
         self.fbink_cfg = ffi.new("FBInkConfig *")
@@ -272,6 +295,8 @@ class koboHUB:
                            SFCompact_Big=ImageFont.truetype("fonts/SF-Compact-Rounded-Bold.ttf", 70),
                            bus_times_font=ImageFont.truetype("fonts/RobotoMono-Bold.ttf", 32),
                            larger=ImageFont.truetype("fonts/segoe-ui.ttf", 36))
+        self.daycount = datetime.now().strftime("%d")
+        self.daycount = "0"
 
         # icons
         self.icons = icons(wind=Image.open('icons/w.png'),
@@ -357,9 +382,9 @@ class koboHUB:
             if self.cfg_data['transit-icon'] =="BUS":
                 transit_icon_file = "Icons/buss_80x80.png"
             if self.cfg_data['transit-icon'] =="METRO":
-                transit_icon_file = "Icons/metro_80x80"
+                transit_icon_file = "Icons/metro_80x80.png"
             if self.cfg_data['transit-icon'] =="TRAM":
-                transit_icon_file = "Icons/tram_80x80"
+                transit_icon_file = "Icons/tram_80x80.png"
 
             transit_icon = Image.open(transit_icon_file)
             bx = self.screen_size[0] - (transit_icon.size[0] + 60)
@@ -641,8 +666,8 @@ class koboHUB:
                 qml = int(self.cfg_data['quote-of-the-day-max-lenght'])
                 qll = qml+1
                 qmaxtries = 0
-                if currenttime.strftime("%H") > HOURGLASS:
-                    HOURGLASS = datetime.now().strftime("%H")
+                if int( currenttime.strftime("%d") ) > int( self.daycount ):
+                    self.daycount = datetime.now().strftime("%d")
                     print("Quote Feature : Getting a quote under "+str(qml)+" lenght")
                     while qll >= qml :
                         quote = quoteoftheday()
@@ -651,7 +676,7 @@ class koboHUB:
                         if qmaxtries > 10:
                             break
                         if qll > qml:
-                            print("Quote Feature : Attempt: "+str(qmaxtries), end='\r')
+                            print("Quote Feature : Attempt: "+str(qmaxtries))
                         else:
                             print("Quote Feature : Quote lenght is "+str(qll))
 
@@ -660,9 +685,10 @@ class koboHUB:
                         #Just in case we could not find a short enough quote in 10 attempts.
                         quote.quote_text = "Sorry, No short Quote found, please adjust the quote-of-the-day-max-lenght value"
                         quote.quote_author = "KoboHUB"
+                    print("Quote Feature : "+quote.quote_text+" - "+quote.quote_author)
                 else:
-                    next_quote_hour = datetime.now() + timedelta(hours=1)
-                    print("Quote Feature : Keeping quote, next one at "+next_quote_hour.strftime("%H"))
+                    next_quote_hour = datetime.now() + timedelta(days=1)
+                    print("Quote Feature : Keeping quote, next one at "+next_quote_hour.strftime("%d")+" daycount at "+str(self.daycount))
                 #print("Now trying to slice the text in chunks")
                 text_max = len(quote.quote_text)
                 if screen_rotation == "PORTRAIT" :
@@ -1063,22 +1089,12 @@ class koboHUB:
         image = self._create_image()
         print("KoboHUB : Drawing image")
         
-        currenttime = datetime.now()
-        if currenttime >= currenttime.replace(hour=5, minute=0) and currenttime <= currenttime.replace(hour=9, minute=0) :
-               kobo_blight = setBacklight (kobo_blight, 15)
-        
-        if currenttime > currenttime.replace(hour=9, minute=0) and currenttime <= currenttime.replace(hour=17, minute=0) :
-            kobo_blight = setBacklight (kobo_blight, 0)
-            
-        if currenttime > currenttime.replace(hour=17, minute=0) and currenttime <= currenttime.replace(hour=20, minute=0) :
-            kobo_blight = setBacklight (kobo_blight, 25)
-            
-        if currenttime > currenttime.replace(hour=20, minute=0) and currenttime <= currenttime.replace(hour=22, minute=0) :
-            kobo_blight = setBacklight (kobo_blight, 65)
-            
-        if currenttime > currenttime.replace(hour=22, minute=0) and currenttime <= currenttime.replace(hour=4, minute=0) :
-            kobo_blight = setBacklight (kobo_blight, 0)   
+        if len(self.backlit_settings_data) == 24:
+            target_light = int(self.backlit_settings_data[int(datetime.now().strftime("%H"))])
+            print("KoboHUB : Setting Backlight to configured value "+str(target_light)+" for "+datetime.now().strftime("%H"))
+            kobo_blight = setBacklight (kobo_blight, target_light)
 
+        
         rect = ffi.new("FBInkRect *")
         rect.top = 0
         rect.left = 0
@@ -1186,11 +1202,11 @@ def get_battery_state():
 
 def main():
     global day_check
-    global HOURGLASS
-
-    HOURGLASS = "0"
+       
 
     screen_rotation = get_screen_orientation()
+    screen_size = get_kobo_screen_size()
+
     print("koboHUB started!\n\n")
   
     # fbink configuration
@@ -1235,6 +1251,7 @@ def main():
     ticker_image = Image.open('icons/ticker_loading.png')
     #Clear the screen well before start
     day_check = datetime.now().strftime("%d-%m-%Y")
+    hour_check = datetime.now().strftime("%H")
     try:
         while True:
             if screen_rotation == "PORTRAIT" :
@@ -1243,10 +1260,10 @@ def main():
                 screen_size = get_kobo_screen_size()
                 ticker_x = int(screen_size[0]) - 168
             #print("Comparing ",day_check," with ",datetime.now().strftime("%d-%m-%Y"))
-            if day_check != datetime.now().strftime("%d-%m-%Y") :
-                print("KoboHUB : Cleaninig the e-ink for the day")
+            if hour_check != datetime.now().strftime("%H") :
+                print("KoboHUB : Cleaninig the e-ink for the hour")
                 os.system("fbink -q --flash > /dev/null")
-                day_check = datetime.now().strftime("%d-%m-%Y")
+                hour_check = datetime.now().strftime("%H")
             ticker = 1
             ticker_time = int(cfg_data['koboHUB-refresh-seconds'])
             ticker_time = (ticker_time /60) * 5
@@ -1267,7 +1284,7 @@ def main():
                 ticker_os_cmd ="fbink -q --image file="+ticker_image_file+",x="+str(ticker_x)+",y=5 > /dev/null"
                 os.system(ticker_os_cmd)
                 ticker = ticker +1
-                print("Refresh in: "+str(ticker_time)+" minues ; round :"+str(counter) , end='\r')
+                print("Refresh in: "+str(ticker_time)+" minues ; round :"+str(counter))
                 time.sleep(int(cfg_data['koboHUB-refresh-seconds']))
                 ticker_time -= 1
                 #os.system("ping -c 1 -q www.google.com > /dev/null")
