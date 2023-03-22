@@ -81,6 +81,7 @@ def get_config_data(file_path:str, show_icons:int):
     data['transit-feature_id'] = parser.get("koboHUB","transit-feature")
     data['transit-icon_id'] = parser.get("koboHUB","transit-icon")
     data['transit-id_id'] = parser.get("koboHUB","transit-id")
+    data['transit-stop-name_id'] = parser.get("koboHUB","transit-stop-name")
     data['use-transit-api_id'] = parser.get("koboHUB","use-transit-api")
     data['transit-apikey_id'] = parser.get("koboHUB","transit-apikey")
     data['transit-stop_id'] = parser.get("koboHUB","transit-stop")
@@ -214,6 +215,7 @@ class koboHUB:
         self.cfg_data['transit-feature'] = cfg_file_data['transit-feature_id']
         self.cfg_data['transit-icon'] = cfg_file_data['transit-icon_id']
         self.cfg_data['transit-id'] = cfg_file_data['transit-id_id']
+        self.cfg_data['transit-stop-name'] = cfg_file_data['transit-stop-name_id']
         self.cfg_data['use-transit-api'] = cfg_file_data['use-transit-api_id']
         self.cfg_data['transit-apikey'] = cfg_file_data['transit-apikey_id']
         self.cfg_data['transit-stop'] = cfg_file_data['transit-stop_id']
@@ -397,8 +399,16 @@ class koboHUB:
             bus_t_w, bus_t_h = draw.textsize(self.cfg_data['transit-id'], font=self.fonts.larger)
             x = bx + ( int(transit_icon.size[0]/2) - int(bus_t_w/2) )
             draw.text((x, y), self.cfg_data['transit-id'], font=self.fonts.larger, fill=black)
+
+            stop_t_w, stop_t_h = draw.textsize(self.cfg_data['transit-stop-name'], font=self.fonts.micro)
+            x = (bx + int((transit_icon.size[0]/2)) ) - int( (stop_t_w/2) )
+            y = by + int( transit_icon.size[1] + 4 )
+            draw.text((x, y), self.cfg_data['transit-stop-name'], font=self.fonts.micro, fill=black)
+
             bus_w, bus_h = draw.textsize("00:00", font=self.fonts.bus_times_font)
             x = (bx + int((transit_icon.size[0]/2)) ) - int( (bus_w/2) )
+
+
             # LIVE Bus Schedule
             bus_times = []
             get_live_bus_times = []
