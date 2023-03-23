@@ -90,6 +90,7 @@ for other language codes, see (https://openweathermap.org/current#multi)
 | transit-feature | (TRUE to enable, FALSE to disable this feautre) **WARNING** All transit settings will be ingored if set to FASLSE |
 | transit-icon | can be set to BUS, METRO or TRAM |
 | transit-id | The number to display within the transit-icon Icon on the dashboard, up to ### digits |
+| transit-stop-name | The Name of the stop to be shwon below the icon |
 
 ### Support for Dynamic Transit times (using transit API)
 
