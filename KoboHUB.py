@@ -1033,30 +1033,23 @@ class koboHUB:
         if "linux" in platform:
             bat_percent = get_battery_level()
             bat_chrg_state = get_battery_state()
-            '''
-            with open("/sys/class/power_supply/mc13892_bat/capacity") as file:
-                bat_percent = file.readline()
-                bat_percent = bat_percent.rstrip('\n')
-           # Charging state Not charging, Discharging, Charging
-            with open("/sys/class/power_supply/mc13892_bat/status") as file:                                               
-                bat_chrg_state = file.readline()
-                bat_chrg_state = bat_chrg_state.rstrip('\n')
-            '''
+            print("KoboHUB : Battery : "+str(bat_percent)+" - "+bat_chrg_state)
             #Check if battery is at 100%
             if int(bat_percent) == 100 :
                b_image_batt = Image.open('icons/batt100_32x20.png')
                bicon_x = (self.screen_size[0] - (b_image_batt.size[0]+4))
                img.paste(b_image_batt, (bicon_x, 5))
-            elif int(bat_percent) < 100 :
+            if int(bat_percent) < 100 :
                b_image_batt = Image.open('icons/batt32x20.png')
                bicon_x = (self.screen_size[0] - (b_image_batt.size[0]+4))
                img.paste(b_image_batt, (bicon_x, 5))
-               bat_w, bat_h = draw.textsize(bat_percent, font=self.fonts.micro)
-               draw.text( ((bicon_x + 6), 8), bat_percent, font=self.fonts.micro, fill=black)
+               bat_w, bat_h = draw.textsize(str(bat_percent), font=self.fonts.micro)
+               draw.text( ((bicon_x + 6), 8), str(bat_percent), font=self.fonts.micro, fill=black)
             if bat_chrg_state in ["Charging", "Not charging"] :
                b_image_chrg = Image.open('icons/chrg32x20.png')
-               img.paste(b_image_chrg, (int(self.screen_size[0] - 120), 5))              
-        
+               bicon_x = (self.screen_size[0] - (b_image_chrg.size[0]+4))
+               img.paste(b_image_chrg, (bicon_x, 5))
+                       
         # ip address
         # print("KoboHUB : IP Address is: "+self.ip_address)
         wifi_icon_x = bicon_x - 28

@@ -59,6 +59,13 @@ by this example there is a mutipler of 5 to the value
 with the value of 60 (Seconds), it will therefore refresh every 5 minutes
 it is not recommended to set the value below 30
 
+# KoboHUB Refresh Schedule (BETA)
+Added support for variable refreshes over the 24 hours.
+I also added a backlit scedule per hour in the same file.
+On Kobo that has Backlit, you can now schedule at what brightness (0 for none and up to 100 for max)
+the (backlit_setting) has comma separation per hour (statrs a 0 hour), you can then set each hour to a value between 0 and 100.
+
+
 An indicator at the top right shows the mutipler counter in 5 dots.
 ![Refresh Dots](doc/refreshdots.png)
 
