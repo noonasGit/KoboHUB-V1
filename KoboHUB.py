@@ -95,6 +95,7 @@ def get_config_data(file_path:str, show_icons:int):
     data['garbage-show_id'] = parser.get("koboHUB","garbage-show")
     data['koboHUB-refresh-seconds_id'] = parser.get("koboHUB","koboHUB-refresh-seconds")
     data['koboHUB-var-refresh_id'] = parser.get("beta","koboHUB-var-refresh")
+    data['koboHUB-backlight_id'] = parser.get("koboHUB","koboHUB-backlight")
 
     if show_icons == 1:
         if screen_orientation == "LANDSCAPE" :
@@ -227,6 +228,7 @@ class koboHUB:
         self.cfg_data['quote-of-the-day-max-lenght'] = cfg_file_data['quote-of-the-day-max-lenght_id']
         self.cfg_data['screen-orientation'] = cfg_file_data['screen-orientation_id']
         self.cfg_data['garbage_schedule'] = cfg_file_data['garbage-show_id']
+        self.cfg_data['koboHUB-backlight'] = cfg_file_data['koboHUB-backlight_id']
         cfg_file_data = get_screen_ref_data("koboHUB_refresh_schedule.ini")
 
         self.times_data = cfg_file_data['times_id'].split(",")
@@ -367,7 +369,7 @@ class koboHUB:
         condition = Image.open(self.weather.current.icon)
         condition = condition.resize((int(condition.size[0] /1.2), int(condition.size[1] / 1.2)))
         x_icon_mini = int (x + header_w2) + 5
-        y_icon_mini = 5
+        y_icon_mini = 15
         img.paste(condition, (x_icon_mini,y_icon_mini))
 
         #Transit schedule#
@@ -389,7 +391,7 @@ class koboHUB:
                 transit_icon_file = "Icons/tram_80x80.png"
 
             transit_icon = Image.open(transit_icon_file)
-            bx = self.screen_size[0] - (transit_icon.size[0] + 60)
+            bx = self.screen_size[0] - (transit_icon.size[0] + 50)
             by = 70
             # blx = bx + ( int(transit_icon.size[0]) - int(bus_live_icon.size[0]/2)) + 5
             # bly = by - (int(bus_live_icon.size[1]/2))
@@ -404,10 +406,6 @@ class koboHUB:
             x = (bx + int((transit_icon.size[0]/2)) ) - int( (stop_t_w/2) )
             y = by + int( transit_icon.size[1] + 4 )
             draw.text((x, y), self.cfg_data['transit-stop-name'], font=self.fonts.micro, fill=black)
-
-            bus_w, bus_h = draw.textsize("00:00", font=self.fonts.bus_times_font)
-            x = (bx + int((transit_icon.size[0]/2)) ) - int( (bus_w/2) )
-
 
             # LIVE Bus Schedule
             bus_times = []
@@ -427,32 +425,33 @@ class koboHUB:
                         #Convert the datetime to HH:MM array here.
                         for i in get_live_bus_times :
                             bus_times.append(datetime.fromtimestamp(i).strftime('%H:%M'))
-            if self.cfg_data['use-generic-transit'] == "TRUE" and len(get_live_bus_times) == 0:
-                #Time Table - Hard coded in generic_transit.py - returned as HH:MM arrays no conversion needed.
-                print("Transit (Static) :Using static transit time table data")
-                bus_time_status_icon = Image.open("icons/not_live24x24.png")
-                bus_times = next_transit()
+                if self.cfg_data['use-generic-transit'] == "TRUE" and len(get_live_bus_times) == 0:
+                    #Time Table - Hard coded in generic_transit.py - returned as HH:MM arrays no conversion needed.
+                    print("Transit (Static) :Using static transit time table data")
+                    bus_time_status_icon = Image.open("icons/not_live24x24.png")
+                    bus_times = next_transit()
 
-            b = len(bus_times)
-            if len(get_live_bus_times) :
-                print("Transit Feature :"+str(len(get_live_bus_times))+" Live times found")
-            else:
-                print("Transit Feature :"+str(b)+" Bus schedules found")
-            bc = 0
-            y = y + 87
-            blx = x + (int(bus_w)+ 5)
-            bly = y + 10
+                b = len(bus_times)
+                if len(get_live_bus_times) :
+                    print("Transit Feature :"+str(len(get_live_bus_times))+" Live times found")
+                else:
+                    print("Transit Feature :"+str(b)+" Bus schedules found")
+                bc = 0
+                bus_w, bus_h = draw.textsize("00:00", font=self.fonts.bus_times_font)
+                x = (bx + int((transit_icon.size[0]/2)) ) - int( (bus_w/2) )
+                y = y + 10
+                blx = x + (int(bus_w)+ 5)
+                bly = y + 10
 
-            if b > 0 :
-                
-                while bc < 3 :
-                    draw.text((x, y), bus_times[bc], font=self.fonts.bus_times_font, fill=black)
-                    img.paste(bus_time_status_icon,(blx,bly))
-                    bc = bc +1
-                    y = y + (bus_h + 2)
-                    bly = bly + (bus_h + 2)
-            if b == 0 :
-                draw.text((x, y), "--:--", font=self.fonts.bus_times_font, fill=black)
+                if b > 0 :
+                    while bc < 3 :
+                        draw.text((x, y), bus_times[bc], font=self.fonts.bus_times_font, fill=black)
+                        img.paste(bus_time_status_icon,(blx,bly))
+                        bc = bc +1
+                        y = y + (bus_h + 2)
+                        bly = bly + (bus_h + 2)
+                if b == 0 :
+                    draw.text((x, y), "--:--", font=self.fonts.bus_times_font, fill=black)
         else:
             print("Transit Feature :OFF")
 
@@ -699,10 +698,23 @@ class koboHUB:
                 else:
                     next_quote_hour = datetime.now() + timedelta(days=1)
                     print("Quote Feature : Keeping quote, next one at "+next_quote_hour.strftime("%d")+" daycount at "+str(self.daycount))
+                
+                # Find out how many characters per line of screen
+                test_t = "H"
+                test_w_max = int(self.screen_size[0] - 60)
+                text_c = 0
+                                
+                test_t_w = 10
+                while test_t_w < test_w_max :
+                    test_t = test_t + "H"
+                    test_t_w, test_t_h = draw.textsize(test_t, font=self.fonts.medium)
+                print("Max text width is "+str(test_t_w)+" number of chars "+str(len(test_t)))
+                
                 #print("Now trying to slice the text in chunks")
+
                 text_max = len(quote.quote_text)
                 if screen_rotation == "PORTRAIT" :
-                    text_line_max = 34
+                    text_line_max = len(test_t)
                 else:
                     text_line_max = 45
                 text_line = []
@@ -1037,22 +1049,22 @@ class koboHUB:
             #Check if battery is at 100%
             if int(bat_percent) == 100 :
                b_image_batt = Image.open('icons/batt100_32x20.png')
-               bicon_x = (self.screen_size[0] - (b_image_batt.size[0]+4))
+               bicon_x = (self.screen_size[0] - (b_image_batt.size[0]+8))
                img.paste(b_image_batt, (bicon_x, 5))
             if int(bat_percent) < 100 :
                b_image_batt = Image.open('icons/batt32x20.png')
-               bicon_x = (self.screen_size[0] - (b_image_batt.size[0]+4))
+               bicon_x = (self.screen_size[0] - (b_image_batt.size[0]+8))
                img.paste(b_image_batt, (bicon_x, 5))
                bat_w, bat_h = draw.textsize(str(bat_percent), font=self.fonts.micro)
                draw.text( ((bicon_x + 6), 8), str(bat_percent), font=self.fonts.micro, fill=black)
             if bat_chrg_state in ["Charging", "Not charging"] :
                b_image_chrg = Image.open('icons/chrg32x20.png')
-               bicon_x = (self.screen_size[0] - (b_image_chrg.size[0]+4))
+               bicon_x = (self.screen_size[0] - (b_image_chrg.size[0]+8))
                img.paste(b_image_chrg, (bicon_x, 5))
-                       
+
         # ip address
         # print("KoboHUB : IP Address is: "+self.ip_address)
-        wifi_icon_x = bicon_x - 28
+        wifi_icon_x = bicon_x - 24
         if self.ip_address != "1.1.1.1" :
             b_image_wifi_on = Image.open('icons/wifi_on.png')
             img.paste(b_image_wifi_on, (wifi_icon_x, 5))
@@ -1092,7 +1104,7 @@ class koboHUB:
         image = self._create_image()
         print("KoboHUB : Drawing image")
         
-        if len(self.backlit_settings_data) == 24:
+        if len(self.backlit_settings_data) == 24 and self.cfg_data['koboHUB-backlight'] == "TRUE":
             target_light = int(self.backlit_settings_data[int(datetime.now().strftime("%H"))])
             print("KoboHUB : Setting Backlight to configured value "+str(target_light)+" for "+datetime.now().strftime("%H"))
             kobo_blight = setBacklight (kobo_blight, target_light)
