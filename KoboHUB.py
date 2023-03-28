@@ -248,6 +248,7 @@ class koboHUB:
 
         if "linux" in platform:
             self.screen_size = get_kobo_screen_size()
+            self.screen_size = (state.view_width, state.view_height)
         else:
             self.screen_size = (768, 1024)
 
@@ -287,18 +288,18 @@ class koboHUB:
                            small=ImageFont.truetype("fonts/Fabrica.otf", 26),
                            weather_stats=ImageFont.truetype("fonts/SF-Compact-Rounded-Regular.ttf", 26),
                            weather_stats_bold=ImageFont.truetype("fonts/SF-Compact-Rounded-Bold.ttf", 26),
-                           medium=ImageFont.truetype("fonts/SF-Compact-Rounded-Regular.ttf", 36),
-                           quote=ImageFont.truetype("fonts/SF-Compact-Text-ThinItalic.ttf", 36),
-                           comfort=ImageFont.truetype("fonts/Comfortaa-Regular.ttf", 60),
-                           comfort_small=ImageFont.truetype("fonts/SF-Compact-Rounded-Bold.ttf", 38),
-                           comfortBH=ImageFont.truetype("fonts/Mont-Heavy-Bold.otf", 70),
-                           comfortB=ImageFont.truetype("fonts/Comfortaa-Bold.ttf", 48),
-                           SFCompact_tiny=ImageFont.truetype("fonts/SF-Compact-Rounded-Regular.ttf", 26),
-                           SFCompact_tinyB=ImageFont.truetype("fonts/SF-Compact-Rounded-Bold.ttf", 26),
-                           SFCompact=ImageFont.truetype("fonts/SF-Compact-Rounded-Bold.ttf", 32),
-                           SFCompact_Big=ImageFont.truetype("fonts/SF-Compact-Rounded-Bold.ttf", 70),
-                           bus_times_font=ImageFont.truetype("fonts/RobotoMono-Bold.ttf", 32),
-                           larger=ImageFont.truetype("fonts/segoe-ui.ttf", 36))
+                           medium=ImageFont.truetype("fonts/SF-Compact-Rounded-Regular.ttf", int(self.screen_size[0] / 22)),
+                           quote=ImageFont.truetype("fonts/SF-Compact-Text-ThinItalic.ttf",int(self.screen_size[0] / 22) ),
+                           comfort=ImageFont.truetype("fonts/Comfortaa-Regular.ttf", int(self.screen_size[0] / 8)),
+                           comfort_small=ImageFont.truetype("fonts/SF-Compact-Rounded-Bold.ttf", int(self.screen_size[0] / 18)),
+                           comfortBH=ImageFont.truetype("fonts/Mont-Heavy-Bold.otf", int(self.screen_size[0] / 10)),
+                           comfortB=ImageFont.truetype("fonts/Comfortaa-Bold.ttf", int(self.screen_size[0] /14)),
+                           SFCompact_tiny=ImageFont.truetype("fonts/SF-Compact-Rounded-Regular.ttf", int(self.screen_size[0] / 26)),
+                           SFCompact_tinyB=ImageFont.truetype("fonts/SF-Compact-Rounded-Bold.ttf", int(self.screen_size[0] / 26)),
+                           SFCompact=ImageFont.truetype("fonts/SF-Compact-Rounded-Bold.ttf", int(self.screen_size[0] / 28)),
+                           SFCompact_Big=ImageFont.truetype("fonts/SF-Compact-Rounded-Bold.ttf", int(self.screen_size[0] / 8)),
+                           bus_times_font=ImageFont.truetype("fonts/RobotoMono-Bold.ttf", int(self.screen_size[0] / 22) ),
+                           larger=ImageFont.truetype("fonts/segoe-ui.ttf", int(self.screen_size[0] / 20)))
         self.daycount = datetime.now().strftime("%d")
         self.daycount = "0"
 
@@ -333,6 +334,17 @@ class koboHUB:
 
         img = Image.new('L', (WIDTH, HEIGHT), color=white)
         draw = ImageDraw.Draw(img, 'L')
+
+        # Find out how many characters per line of screen
+        test_t = "H"
+        test_w_max = int(self.screen_size[0] - 15)
+        text_c = 0                                
+        test_t_w = 10
+        while test_t_w < test_w_max :
+            test_t = test_t + "H"
+            test_t_w, test_t_h = draw.textsize(test_t, font=self.fonts.medium)
+            print("Max text width is "+str(test_t_w)+" number of chars "+str(len(test_t)))
+        self.max_chars = len(test_t)
 
         # Dividing lines
         # under today/current
@@ -441,15 +453,15 @@ class koboHUB:
                 x = (bx + int((transit_icon.size[0]/2)) ) - int( (bus_w/2) )
                 y = y + 10
                 blx = x + (int(bus_w)+ 5)
-                bly = y + 10
+                bly = y + 6
 
                 if b > 0 :
                     while bc < 3 :
                         draw.text((x, y), bus_times[bc], font=self.fonts.bus_times_font, fill=black)
                         img.paste(bus_time_status_icon,(blx,bly))
                         bc = bc +1
-                        y = y + (bus_h + 2)
-                        bly = bly + (bus_h + 2)
+                        y = y + (bus_h)
+                        bly = bly + bus_h 
                 if b == 0 :
                     draw.text((x, y), "--:--", font=self.fonts.bus_times_font, fill=black)
         else:
@@ -697,26 +709,12 @@ class koboHUB:
                     print("Quote Feature : "+quote.quote_text+" - "+quote.quote_author)
                 else:
                     next_quote_hour = datetime.now() + timedelta(days=1)
-                    print("Quote Feature : Keeping quote, next one at "+next_quote_hour.strftime("%d")+" daycount at "+str(self.daycount))
-                
-                # Find out how many characters per line of screen
-                test_t = "H"
-                test_w_max = int(self.screen_size[0] - 60)
-                text_c = 0
-                                
-                test_t_w = 10
-                while test_t_w < test_w_max :
-                    test_t = test_t + "H"
-                    test_t_w, test_t_h = draw.textsize(test_t, font=self.fonts.medium)
-                print("Max text width is "+str(test_t_w)+" number of chars "+str(len(test_t)))
-                
+                    print("Quote Feature : Keeping quote, next one at "+next_quote_hour.strftime("%d")+" daycount at "+str(self.daycount))              
                 #print("Now trying to slice the text in chunks")
 
                 text_max = len(quote.quote_text)
-                if screen_rotation == "PORTRAIT" :
-                    text_line_max = len(test_t)
-                else:
-                    text_line_max = 45
+                text_line_max = self.max_chars
+                
                 text_line = []
                 textbuffer = ""
                 #Split the quote into words in an array
@@ -746,6 +744,7 @@ class koboHUB:
                 g_w = 0
                 q_h = 0
                 q_w = 0
+
                 #Getting the widest line of text
                 tq_w, tq_h = draw.textsize(text_line[qc], font=self.fonts.medium)
                 while qc < qs :
@@ -870,12 +869,10 @@ class koboHUB:
                     g_image_end_icon = Image.open('icons/garbage_icons_garage.png')
                     g_string = garbage_vars['all-collection-time-over-message-line1-id']
                     g_sub_sting = garbage_vars['all-collection-time-over-message-line2-id']
-               #print("Now trying to slice the text in chunks")
+                #print("Now trying to slice the text in chunks")
+                print("Text is "+str(len(g_string)+" max is "+str(self.max_chars)))
                 text_max = len(g_string)
-                if screen_rotation == "PORTRAIT" :
-                    text_line_max = 34
-                else:
-                    text_line_max = 55
+                text_line_max = self.max_chars
                 text_line = []
                 textbuffer = ""
                 #Split the quote into words in an array
@@ -903,8 +900,11 @@ class koboHUB:
                     draw.text((gTx, gTy), text_line[qc], font=self.fonts.medium, fill=black)
                     qc += 1
                     gTy = gTy + int(tg_h)
-                draw.text((gTx, gTy), g_sub_sting, font=self.fonts.medium, fill=gray)
-                gTy = gTy + int(cal_todo_icon.size[1]+4)
+                g_all_prepare = g_sub_sting
+
+                if (len(g_sub_sting)) < self.max_chars :
+                    draw.text((gTx, gTy), g_sub_sting, font=self.fonts.medium, fill=gray)
+                    gTy = gTy + int(cal_todo_icon.size[1]+4)
                 
                 # Now add the icons in sequence below the Schedule text
                 # Show the truck icon at the very right.
@@ -964,10 +964,7 @@ class koboHUB:
 
                 #print("Now trying to slice the text in chunks")
                 text_max = len(g_string)
-                if screen_rotation == "PORTRAIT" :
-                    text_line_max = 34
-                else:
-                    text_line_max = 55
+                text_line_max = self.max_chars
                 text_line = []
                 textbuffer = ""
                 #Split the quote into words in an array
@@ -995,9 +992,12 @@ class koboHUB:
                     draw.text((gTx, gTy), text_line[qc], font=self.fonts.medium, fill=black)
                     qc += 1
                     gTy = gTy + int(tg_h)
-                draw.text((gTx, gTy), garbage_vars['all-garbage-prepare-message-id'], font=self.fonts.medium, fill=gray)
-                # Now add the icons in sequence below the Schedule text
-                gTy = gTy + int(cal_todo_icon.size[1]+4)
+                g_all_prepare = garbage_vars['all-garbage-prepare-message-id']
+
+                if (len(g_all_prepare)) < self.max_chars :
+                    draw.text((gTx, gTy), g_all_prepare, font=self.fonts.medium, fill=gray)
+                    # Now add the icons in sequence below the Schedule text
+                    gTy = gTy + int(cal_todo_icon.size[1]+4)
                 # Show the street icon at the very right.
                 g_image_end_icon = Image.open('icons/garbage_icons_trees.png')
                 gTx = int(self.screen_size[0] - int(g_image_end_icon.size[0])) - 10
@@ -1037,8 +1037,10 @@ class koboHUB:
         # Print footer Last updated @
         footer = "Last refresh @ " + datetime.now().strftime("%H:%M")
         footer_w, footer_h = draw.textsize(footer, font=self.fonts.small)
-        x = ( int (self.screen_size[0])/2 ) - (int(footer_w) / 2) + X_OFFSET
-        y = ( int (self.screen_size[1])) - (int(footer_h) + 15)
+        x = ( int(self.screen_size[0])/2 ) - (int(footer_w) / 2) + X_OFFSET
+        y = int(self.screen_size[1])
+        y = y - (int(footer_h) + 15)
+        print("Footer: x "+str(x)+" y "+str(y))
         draw.text((x, y), footer, font=self.fonts.small, fill=gray)
       
         # battery level
@@ -1085,9 +1087,9 @@ class koboHUB:
         screen_rotation = get_screen_orientation()
         #screen_size = get_kobo_screen_size()
         if screen_rotation == "PORTRAIT" :
-            ticker_x = int(self.screen_size[0] - 168)
+            ticker_x = int(self.screen_size[0] - 175)
         else:
-            ticker_x = int(self.screen_size[0] - 168)
+            ticker_x = int(self.screen_size[0] - 175)
             #ticker_x = 840
 
         ticker_image_file = 'icons/ticker_loading.png'
@@ -1270,10 +1272,10 @@ def main():
     try:
         while True:
             if screen_rotation == "PORTRAIT" :
-                ticker_x = int(screen_size[0]) -168
+                ticker_x = int(screen_size[0]) -175
             else:
                 screen_size = get_kobo_screen_size()
-                ticker_x = int(screen_size[0]) - 168
+                ticker_x = int(screen_size[0]) - 175
             #print("Comparing ",day_check," with ",datetime.now().strftime("%d-%m-%Y"))
             if hour_check != datetime.now().strftime("%H") :
                 print("KoboHUB : Cleaninig the e-ink for the hour")
