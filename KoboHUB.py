@@ -335,17 +335,27 @@ class koboHUB:
         img = Image.new('L', (WIDTH, HEIGHT), color=white)
         draw = ImageDraw.Draw(img, 'L')
 
-        # Find out how many characters per line of screen
+        # Find out how many characters per line of screen for garbage text
         test_t = "H"
-        test_w_max = int(self.screen_size[0] - 15)
-        text_c = 0                                
+        test_w_max = int(self.screen_size[0] - 200)
+        text_c = 0
         test_t_w = 10
         while test_t_w < test_w_max :
             test_t = test_t + "H"
             test_t_w, test_t_h = draw.textsize(test_t, font=self.fonts.medium)
-            print("Max text width is "+str(test_t_w)+" number of chars "+str(len(test_t)))
-        self.max_chars = len(test_t)
+            #print("Quote Feature : Max text width is "+str(test_t_w)+" number of chars "+str(len(test_t)))
+        self.max_chars = test_t_w
 
+       # Find out how many characters per line of screen for Quotes
+        test_t = "H"
+        test_w_max = int(self.screen_size[0] - 200)
+        text_c = 0
+        test_t_w = 0
+        while test_t_w < test_w_max :
+            test_t = test_t + "H"
+            test_t_w, test_t_h = draw.textsize(test_t, font=self.fonts.quote)
+            #print("Quote Feature : Max text width is "+str(test_t_w)+" number of chars "+str(len(test_t)))
+        self.max_charsQ = test_t_w
         # Dividing lines
         # under today/current
         draw.line([(self.BORDER, self.boxes.current.height), (WIDTH - self.BORDER, self.boxes.current.height)], gray)
@@ -711,9 +721,9 @@ class koboHUB:
                     next_quote_hour = datetime.now() + timedelta(days=1)
                     print("Quote Feature : Keeping quote, next one at "+next_quote_hour.strftime("%d")+" daycount at "+str(self.daycount))              
                 #print("Now trying to slice the text in chunks")
-
-                text_max = len(quote.quote_text)
-                text_line_max = self.max_chars
+                test_t_w, test_t_h = draw.textsize(quote.quote_text, font=self.fonts.quote)
+                text_max = test_t_w
+                text_line_max = self.max_charsQ
                 
                 text_line = []
                 textbuffer = ""
@@ -727,8 +737,9 @@ class koboHUB:
                     while l < ql:
                         textbuffer = textbuffer + quote_words[l] + " "
                         l += 1
+                        test_t_w, test_t_h = draw.textsize(textbuffer, font=self.fonts.quote)
                         #print(textbuffer)
-                        if len(textbuffer) > text_line_max:
+                        if test_t_w > text_line_max:
                             text_line.append(textbuffer)
                             textbuffer = ""
                         #print(l)
@@ -871,7 +882,8 @@ class koboHUB:
                     g_sub_sting = garbage_vars['all-collection-time-over-message-line2-id']
                 #print("Now trying to slice the text in chunks")
                 print("Text is "+str(len(g_string)+" max is "+str(self.max_chars)))
-                text_max = len(g_string)
+                test_t_w, test_t_h = draw.textsize(g_string, font=self.fonts.medium)
+                text_max = test_t_w
                 text_line_max = self.max_chars
                 text_line = []
                 textbuffer = ""
@@ -885,7 +897,8 @@ class koboHUB:
                     while l < ql:
                         textbuffer = textbuffer + schedule_words[l] + " "
                         l += 1
-                        if len(textbuffer) > text_line_max:
+                        test_t_w, test_t_h = draw.textsize(g_string, font=self.fonts.medium)
+                        if test_t_w > text_line_max:
                             text_line.append(textbuffer)
                             textbuffer = ""
                     if (len(textbuffer)):
@@ -963,7 +976,8 @@ class koboHUB:
                 g_string = g_string + " " + garbage_vars['all-garbage-time-message-end-id']
 
                 #print("Now trying to slice the text in chunks")
-                text_max = len(g_string)
+                test_t_w, test_t_h = draw.textsize(g_string, font=self.fonts.medium)
+                text_max = test_t_w
                 text_line_max = self.max_chars
                 text_line = []
                 textbuffer = ""
@@ -977,7 +991,8 @@ class koboHUB:
                     while l < ql:
                         textbuffer = textbuffer + schedule_words[l] + " "
                         l += 1
-                        if len(textbuffer) > text_line_max:
+                        test_t_w, test_t_h = draw.textsize(g_string, font=self.fonts.medium)
+                        if test_t_w > text_line_max:
                             text_line.append(textbuffer)
                             textbuffer = ""
                     if (len(textbuffer)):
